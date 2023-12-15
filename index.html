@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login and Customer List</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      #login-container,
+      #customer-list-container,
+      #customer-details-container {
+        text-align: center;
+        width: 80%;
+        margin: 20px auto;
+      }
+
+      #customer-list-container,
+      #customer-details-container {
+        display: none;
+      }
+
+      #customer-list,
+      #customer-details {
+        list-style: none;
+        padding: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="login-container">
+      <h2>Login</h2>
+      <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required />
+        <br />
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+        <br />
+        <button type="button" onclick="login()">Login</button>
+      </form>
+    </div>
+
+    <div id="customer-list-container">
+      <h2>Customer List</h2>
+      <table id="customer-table">
+        <thead>
+          <tr>
+            <th>UUID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Street</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customer-list"></tbody>
+      </table>
+
+      <button onclick="showAddCustomerForm()">Add Customer</button>
+
+      <div id="add-customer-form" style="display: none">
+        <h2>Create a new Customer</h2>
+        <form id="customer-form">
+          <label for="first_name">First Name:</label>
+          <input type="text" id="first_name" name="first_name" required />
+          <br />
+          <label for="last_name">Last Name:</label>
+          <input type="text" id="last_name" name="last_name" required />
+          <br />
+          <label for="street">Street:</label>
+          <input type="text" id="street" name="street" />
+          <br />
+          <label for="address">Address:</label>
+          <input type="text" id="address" name="address" />
+          <br />
+          <label for="city">City:</label>
+          <input type="text" id="city" name="city" />
+          <br />
+          <label for="state">State:</label>
+          <input type="text" id="state" name="state" />
+          <br />
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" />
+          <br />
+          <label for="phone">Phone:</label>
+          <input type="tel" id="phone" name="phone" />
+          <br />
+          <button type="button" onclick="addCustomer()">Submit</button>
+        </form>
+      </div>
+
+      <div id="edit-customer-form" style="display: none">
+        <h2>Edit Customer Details</h2>
+        <form id="edit-customer-form">
+          <label for="edit_first_name">First Name:</label>
+          <input type="text" id="edit_first_name" name="first_name" required />
+          <br />
+          <label for="edit_last_name">Last Name:</label>
+          <input type="text" id="edit_last_name" name="last_name" required />
+          <br />
+          <label for="edit_street">Street:</label>
+          <input type="text" id="edit_street" name="street" />
+          <br />
+          <label for="edit_address">Address:</label>
+          <input type="text" id="edit_address" name="address" />
+          <br />
+          <label for="edit_city">City:</label>
+          <input type="text" id="edit_city" name="city" />
+          <br />
+          <label for="edit_state">State:</label>
+          <input type="text" id="edit_state" name="state" />
+          <br />
+          <label for="edit_email">Email:</label>
+          <input type="email" id="edit_email" name="email" />
+          <br />
+          <label for="edit_phone">Phone:</label>
+          <input type="tel" id="edit_phone" name="phone" />
+          <br />
+          <button type="button" onclick="updateCustomer()">Update Customer</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      let accessToken;
+      let updateCustomerOldDetails;
+      async function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        const loginDetails = {
+          login_id: username,
+          password: password,
+        };
+
+        try {
+          const response = await fetch("http://localhost:3000/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(loginDetails),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            accessToken = data.access_token;
+
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("customer-list-container").style.display =
+              "block";
+
+            await fetchCustomerList(accessToken);
+          } else {
+            // Handle login error
+            // console.error('Login failed');
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      async function fetchCustomerList(accessToken) {
+        try {
+          const response = await fetch("http://localhost:3000/getlist", {
+            method: "GET",
+          });
+
+          if (response.ok) {
+            const customers = await response.json();
+            const customerList = document.getElementById("customer-list");
+            ("customer-list");
+
+            const tableBody = document.getElementById("customer-list");
+            tableBody.innerHTML = ""; // Clear previous entries
+
+            customers.forEach((customer) => {
+              const row = document.createElement("tr");
+
+              // Iterate through customer properties (excluding 'uuid')
+              Object.keys(customer).forEach((key, index) => {
+                const cell = document.createElement("td");
+                cell.textContent = customer[key];
+                row.appendChild(cell);
+              });
+
+              // Add edit and delete buttons to the last column
+              const actionsCell = document.createElement("td");
+
+              const editButton = document.createElement("button");
+              editButton.textContent = "Edit";
+              editButton.onclick = () => editCustomer(customer);
+              actionsCell.appendChild(editButton);
+
+              const deleteButton = document.createElement("button");
+              deleteButton.textContent = "Delete";
+              deleteButton.onclick = () => deleteCustomer(customer.uuid);
+              actionsCell.appendChild(deleteButton);
+
+              row.appendChild(actionsCell);
+              tableBody.appendChild(row);
+            });
+          } else {
+            console.error("Error fetching customer list");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      async function editCustomer(customer) {
+        console.log(customer);
+        updateCustomerOldDetails = customer;
+        // Display the form with current values
+        const editForm = document.getElementById("edit-customer-form");
+        editForm.style.display = "block";
+
+        // Populate the form with current customer details
+        Object.keys(customer).forEach((key) => {
+          const inputField = document.getElementById(`edit_${key}`);
+          if (inputField) {
+            inputField.value = customer[key];
+          }
+        });
+      }
+
+      async function updateCustomer() {
+        if(!updateCustomerOldDetails) {
+          console.log("no customer selected for updation!");
+          return;
+        }
+        // Get updated details from the form
+        const updatedDetails = {};
+        const formElements =
+          document.getElementById("edit-customer-form").elements;
+        Object.keys(updateCustomerOldDetails).forEach((key) => {
+          const inputField = document.getElementById(`edit_${key}`);
+          if (inputField) {
+            updatedDetails[key] = inputField.value;
+          }
+        });
+        console.log(updatedDetails);
+        try {
+          const response = await fetch(
+            `http://localhost:3000/updatecustomer/${updateCustomerOldDetails.uuid}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedDetails),
+            }
+          );
+
+          if (response.ok) {
+            alert("Customer updated successfully");
+            // Hide the edit form
+            const editForm = document.getElementById("edit-customer-form");
+            editForm.style.display = "none";
+            // Fetch and update the customer list
+            await fetchCustomerList(accessToken);
+          } else if (response.status === 500) {
+            alert("Error: UUID not found");
+          } else if (response.status === 400) {
+            alert("Error: Body is Empty");
+          } else {
+            console.error("Error updating customer:", response.status);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+        updateCustomerOldDetails = undefined;
+      }
+
+      async function deleteCustomer(uuid) {
+        console.log("Delete customer with UUID:", uuid);
+
+        try {
+          const response = await fetch(
+            `http://localhost:3000/deletecustomer/${uuid}`,
+            {
+              method: "DELETE",
+              headers: {},
+            }
+          );
+
+          if (response.ok) {
+            alert("Customer deleted successfully");
+
+            // Remove the deleted customer row from the table
+            const tableBody = document.getElementById("customer-list");
+            const rows = tableBody.getElementsByTagName("tr");
+
+            for (let i = 0; i < rows.length; i++) {
+              const cells = rows[i].getElementsByTagName("td");
+              const customerUUID = cells[0].textContent; // Assuming the UUID is in the first column
+              if (customerUUID === uuid) {
+                tableBody.removeChild(rows[i]);
+                break;
+              }
+            }
+          } else {
+            console.log("Error, unable to delete the customer");
+          }
+        } catch (error) {
+          console.log("Error:", error);
+        }
+      }
+
+      function showAddCustomerForm() {
+        const addCustomerForm = document.getElementById("add-customer-form");
+        addCustomerForm.style.display = "block";
+      }
+
+      function generateUUID() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+          /[xy]/g,
+          function (c) {
+            var r = (Math.random() * 16) | 0,
+              v = c === "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          }
+        );
+      }
+
+      async function addCustomer() {
+        const customerForm = document.getElementById("customer-form");
+        const formData = new FormData(customerForm);
+
+        let customerDetails = {};
+        formData.forEach((value, key) => {
+          customerDetails[key] = value;
+        });
+
+        const uuid = generateUUID();
+        console.log(uuid);
+        customerDetails.uuid = uuid;
+
+        try {
+          const response = await fetch("http://localhost:3000/addcustomer", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(customerDetails),
+          });
+          alert("Customer added successfully");
+          // Disable the Add Customer form
+          const addCustomerForm = document.getElementById("add-customer-form");
+          addCustomerForm.style.display = "none";
+          // Fetch and update the customer list
+          await fetchCustomerList(accessToken);
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
